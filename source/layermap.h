@@ -167,6 +167,7 @@ void initialize(int SEED, ivec2 _dim){
   //Important so Re-Callable
 
   pool.reset();
+  pool.reserve(POOLSIZE);
 
   if(dat != NULL) delete[] dat;
   dat = new sec*[dim.x*dim.y];      //Array of Section Pointers
@@ -216,6 +217,7 @@ void initialize(int SEED, ivec2 _dim){
 }
 
 //Constructors
+Layermap(){}
 Layermap(int SEED, ivec2 _dim){
   pool.reserve(POOLSIZE);                //Some permissible amount of RAM later...
   initialize(SEED, _dim);

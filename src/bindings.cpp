@@ -96,7 +96,7 @@ struct Sim {
 
 
     Sim(uint32_t seed_, int dim_x, int dim_y, const char* soil_file)
-        : dim_x(dim_x), dim_y(dim_y), nwater(250), nwind(250), seed(seed_), terrain((int)seed_, ivec2(dim_x, dim_y)), vpool(dim_x * dim_y * 4, 256)
+        : dim_x(dim_x), dim_y(dim_y), nwater(250), nwind(250), seed(seed_), vpool(dim_x * dim_y * 4, 256)
     {
         soils.clear();
         soilmap.clear();
@@ -115,6 +115,7 @@ struct Sim {
             loadsoil("soil/default.soil");
         WaterParticle::init();
         WindParticle::init();
+        terrain.initialize((int)seed_, ivec2(dim_x, dim_y));
         initialized = true;
     }
     void reset() {
@@ -130,9 +131,9 @@ struct Sim {
         phong.clear();
     }
     ~Sim() {
-        if (WaterParticle::frequency) { delete[] WaterParticle::frequency; }
-        if (WaterParticle::track) { delete[] WaterParticle::track; }
-        if (WindParticle::frequency) { delete[] WindParticle::frequency; }
+        if (WaterParticle::frequency) { delete[] WaterParticle::frequency; WaterParticle::frequency = nullptr; }
+        if (WaterParticle::track) { delete[] WaterParticle::track; WaterParticle::track = nullptr; }
+        if (WindParticle::frequency) { delete[] WindParticle::frequency; WindParticle::frequency = nullptr; }
         terrain.~Layermap();
         vpool.clear();
         soils.clear();
@@ -168,17 +169,17 @@ struct Sim {
 
     void heightmap(float* out) {
         if (!initialized) return;
-        int n = SIZEX * SIZEY;
+        int n = dim_x * dim_y;
         for (int i = 0; i < n; i++) {
-            out[i] = (float)terrain.height(ivec2(i % SIZEX, i / SIZEX));
+            out[i] = (float)terrain.height(ivec2(i % dim_x, i / dim_y));
         }
     }
 
     void colormap(uint8_t* out, int* len) {
         if (!initialized) return;
-        int n = SIZEX * SIZEY;
+        int n = dim_x * dim_y;
         for (int i = 0; i < n; i++) {
-            ivec2 p(i % SIZEX, i / SIZEX);
+            ivec2 p(i % dim_x, i / dim_y);
             sec* top = terrain.top(p);
             if (top != nullptr) {
                 SurfParam& param = soils[top->type];
