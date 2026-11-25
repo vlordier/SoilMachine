@@ -269,7 +269,9 @@ struct WaterParticle : public Particle {
           recascade = true;
         if(transfer > 0) recascade = true;
         map.add(bpos, map.pool.get(transfer, soilmap["Air"]));
-        map.top(bpos)->saturation = 1.0f;
+        sec* top = map.top(bpos);
+        if (top != NULL)
+          top->saturation = 1.0f;
         map.update(tpos, vertexpool);
         map.update(bpos, vertexpool);
 
@@ -316,11 +318,13 @@ struct WaterParticle : public Particle {
 
         // Remove from Top Layer
         if(top->type == soilmap["Air"])
-          double diff = map.remove(ipos, seepage*transfer);
-        else
+          map.remove(ipos, seepage*transfer);
+        else if (param.porosity > 0.0f)
           top->saturation -= (seepage*transfer) / (top->size*param.porosity);
 
-        prev->saturation += (seepage*transfer) / (prev->size*nparam.porosity);
+        // Add to Bottom Layer
+        if (nparam.porosity > 0.0f)
+          prev->saturation += (seepage*transfer) / (prev->size*nparam.porosity);
 
       }
 

@@ -87,10 +87,16 @@ struct Sim {
     uint32_t seed;
     bool initialized = false;
     Layermap terrain;
+    int32_t dim_x;
+    int32_t dim_y;
+    int32_t nwater = 250;
+    int32_t nwind = 250;
+    int32_t scale = 80;
     Vertexpool<Vertex> vpool;
 
+
     Sim(uint32_t seed_, int dim_x, int dim_y, const char* soil_file)
-        : seed(seed_), terrain(0, ivec2(1, 1)), vpool(dim_x * dim_y * 4, 256)
+        : dim_x(dim_x), dim_y(dim_y), nwater(250), nwind(250), seed(seed_), terrain((int)seed_, ivec2(dim_x, dim_y)), vpool(dim_x * dim_y * 4, 256)
     {
         soils.clear();
         soilmap.clear();
@@ -108,7 +114,7 @@ struct Sim {
         else
             loadsoil("soil/default.soil");
         WaterParticle::init();
-        terrain = Layermap((int)seed_, ivec2(dim_x, dim_y));
+        WindParticle::init();
         initialized = true;
     }
     void reset() {
@@ -195,11 +201,11 @@ struct Sim {
     }
 
     void set_seed(uint32_t s) { seed = s; }
-    void set_nwater(int n) { NWATER = n; }
-    void set_nwind(int n) { NWIND = n; }
+    void set_nwater(int n) { nwater = n; }
+    void set_nwind(int n) { nwind = n; }
     void set_scale(int s) { SCALE = s; }
-    int dim_x() const { return SIZEX; }
-    int dim_y() const { return SIZEY; }
+    int32_t get_dim_x() const { return dim_x; }
+    int32_t get_dim_y() const { return dim_y; }
 };
 
 // ─── FFI exports ─────────────────────────────────────────────────────────
@@ -218,8 +224,8 @@ void  sim_set_seed(void* raw, uint32_t seed) { ((Sim*)raw)->set_seed(seed); }
 void  sim_set_nwater(void* raw, int n) { ((Sim*)raw)->set_nwater(n); }
 void  sim_set_nwind(void* raw, int n) { ((Sim*)raw)->set_nwind(n); }
 void  sim_set_scale(void* raw, int s) { ((Sim*)raw)->set_scale(s); }
-int   sim_get_dim_x(void* raw) { return ((Sim*)raw)->dim_x(); }
-int   sim_get_dim_y(void* raw) { return ((Sim*)raw)->dim_y(); }
+int   sim_get_dim_x(void* raw) { return ((Sim*)raw)->get_dim_x(); }
+int   sim_get_dim_y(void* raw) { return ((Sim*)raw)->get_dim_y(); }
 void  sim_reset(void* raw) { ((Sim*)raw)->reset(); }
 
 }

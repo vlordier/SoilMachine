@@ -83,9 +83,9 @@ struct Particle {
       float transfer = param.settling * excess / 2.0f;
 
       bool recascade = false;
-
-      if(transfer > map.top(tpos)->size)
-        transfer = map.top(tpos)->size;
+      sec* topT = map.top(tpos);
+      if (topT != NULL && transfer > topT->size)
+        transfer = topT->size;
 
       if(map.remove(tpos, transfer) != 0)
         recascade = true;
