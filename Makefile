@@ -1,40 +1,61 @@
-# soillib
-# Author: Nicholas McDonald
-# Version 1.0
-# Tested on GNU/Linux and MacOS
+# SoilMachine Rust bindings Makefile
+# Build, test, and formal verification targets
 
-# Install Location
+CARGO = cargo
+CARGO_TARGET_DIR = ./target
 
-LIBPATH = $(HOME)/.local/lib
-INCPATH = $(HOME)/.local/include
+# ── Build ─────────────────────────────────────────────────────────────
 
-# Compiler Settings
+.PHONY: all build clean
 
-CC = g++-10 -std=c++20
-CF = -Wfatal-errors -O2
+all: build
 
-TINYLINK = -lX11 -lpthread -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lGL -lGLEW -lboost_system -lboost_filesystem
+build:
+	$(CARGO) build --target-dir $(CARGO_TARGET_DIR)
 
-# OS Specific Configuration
+clean:
+	$(CARGO) clean --target-dir $(CARGO_TARGET_DIR)
 
-UNAME := $(shell uname)
+# ── Tests ─────────────────────────────────────────────────────────────
 
-ifeq ($(UNAME), Linux)			# Detect GNU/Linux
-LIBPATH = $(HOME)/.local/lib
-INCPATH = $(HOME)/.local/include
-endif
+.PHONY: test proptest
 
-ifeq ($(UNAME), Darwin)			# Detect MacOS
+test:
+	$(CARGO) test --target-dir $(CARGO_TARGET_DIR)
 
-INCPATH = /opt/homebrew/include
-LIBPATH = /opt/homebrew/lib
+# Property-based tests (Proptest)
+proptest:
+	$(CARGO) test --test prop_sim --target-dir $(CARGO_TARGET_DIR)
 
-CC = g++-12 -std=c++20
+# ── Formal Verification ───────────────────────────────────────────────
 
-endif
+.PHONY: kani verus tlc verify
 
-# Compile Soilmachine
+# Kani model checking
+# Run: kani src/kani.rs
+# Verifies: memory safety, bounds, null-deref, state machine
+kani:
+	kani src/kani.rs
 
+# Verus formal verification
+# Run: verus verification/verus/sim_contracts.rs
+# Verifies: pre/post conditions, state machine contracts
+verus:
+	/opt/verus/current/verify_rust/src/verus verification/verus/sim_contracts.rs
 
-all: SoilMachine.cpp
-			$(CC) -L$(LIBPATH) -I$(INCPATH) SoilMachine.cpp $(CF) -lTinyEngine $(TINYLINK) -o soilmachine
+# TLC model checking (requires Java)
+# Models: erosion state machine invariants
+# Run: java tlc2.TLC -workers 4 verification/tlc/SoilMachine.tla
+tlc:
+	cd verification/tlc && java tlc2.TLC -workers 4 SoilMachine
+
+# Run all verification
+verify: kani tlc
+
+# ── Integration ───────────────────────────────────────────────────────
+
+.PHONY: full-check
+
+# Full check: build + test + verify
+full-check: build test verify
+	@echo "All checks passed."
